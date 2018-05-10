@@ -1,0 +1,144 @@
+{% extends "base_index.html" %}
+{% load tags %}
+
+{% block container %}
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                <li class="active"><a href="{% url 'cicd_index' %}">主页</a></li>
+                <li><a href="{% url 'cicd_tools' %}">工具列表</a></li>
+                <li><a href="">任务列表</a></li>
+
+            </ul>
+
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            {% block index %}
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">GitLab服务器连接列表</h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table table-hover">
+                            {% display_gitlab_in_table git_objs %}
+                        </table>
+                    </div>
+                </div>
+
+
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Build工程</h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table table-hover">
+                            {% display_build_in_table build_objs %}
+                        </table>
+                    </div>
+                </div>
+
+
+
+
+                <!-- Button trigger modal -->
+
+
+                <!-- Modal -->
+                <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title" id="myModalLabel">删除</h4>
+                            </div>
+                            <div class="modal-body">
+                                是否要删除？
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">退出</button>
+                                <button id="confirm_delete" onclick="confirm();" type="button" class="btn btn-primary" data-dismiss="modal">确定删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endblock %}
+        </div>
+    </div>
+
+
+    {% block bottom-js %}
+        <script>
+
+            function preConfirm(ele){
+                $('#myModal').on('shown.bs.modal', function (e) {
+                    var obj_id = $(ele).attr("obj_id");
+
+                    var title_name = $(ele).parent().parent().find("[target='title']").text();
+                    $("#myModalLabel").text(title_name);
+                    $("#confirm_delete").attr("obj_id", obj_id);
+
+                });
+            }
+
+
+            function confirm(){
+                $('#myModal').on('hidden.bs.modal', function (e) {
+                    var obj_id = $("#confirm_delete").attr("obj_id");
+
+
+                    $.ajax({
+                        url: "{% url 'cicd_tools_delete' %}",
+                        type: "POST",
+                        data: {'obj_id': obj_id},
+                        headers: {'X-CSRFToken': $.cookie("csrftoken")},
+                        dataType: "JSON",
+                        success: function (res_data) {
+                            console.log(res_data);
+
+                            if (res_data.status){
+                                alert("删除数据成功！");
+                                location.reload();
+                            }else{
+                                alert("删除数据失败！");
+                            }
+
+
+                        },
+                        error: function () {
+                            alert("删除数据失败！");
+                        }
+                    })
+
+
+                })
+            }
+
+            function triggerJob(ele) {
+                var build_id = $(ele).parent().parent().attr("build_id");
+                console.log(build_id);
+                $.ajax({
+                    url: "{% url 'trigger_job' %}",
+                    type: "post",
+                    data: {"build_id": build_id},
+                    dataType: 'JSON',
+                    headers: {'X-CSRFToken': $.cookie('csrftoken'),},
+                    success: function (res_data) {
+                        if(res_data.status){
+                            alert("触发任务成功");
+                        }else{
+                            alert("触发任务失败111");
+                        }
+                    },
+                    error: function () {
+                        alert("触发任务失败222");
+                    }
+                });
+            }
+
+        </script>
+
+    {% endblock %}
+
+
+
+{% endblock %}

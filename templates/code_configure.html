@@ -1,0 +1,117 @@
+{% extends "index.html" %}
+{% load tags %}
+
+{% block index %}
+
+    <ul id="repo_nav" class="nav nav-tabs">
+
+        {% if selected_group %}
+            {% for item in group_objs %}
+                {% if item == selected_group%}
+                    <li role="presentation" class="active"><a href="?group={{ item }}">{{ item }}</a></li>
+                {% else %}
+                    <li role="presentation"><a href="?group={{ item }}">{{ item }}</a></li>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {% for item in group_objs %}
+                {% if item == group_objs.0%}
+                    <li role="presentation" class="active"><a href="?group={{ item }}">{{ item }}</a></li>
+                {% else %}
+                    <li role="presentation"><a href="?group={{ item }}">{{ item }}</a></li>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </ul>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-striped">
+            <tr>
+                <th onclick="selectAll(this);"><input type="checkbox"></th>
+                <th>序号</th>
+                <th>项目名称</th>
+                <th style="width: 120px">分支</th>
+                <th>创建时间</th>
+                <th>ssh repo URL</th>
+                <th style="display: none">http repo URL</th>
+                <th>MANIFESTS_FILE</th>
+
+                {% display_repo_in_table project_objs base_url person_token %}
+
+
+        </table>
+    </div>
+
+<div>
+<button onclick="getData()" type="button" class="btn btn-primary">保存</button>
+
+</div>
+
+{% endblock %}
+{% block bottom-js %}
+<script>
+    function selectAll(ele){
+        if($(ele).find("input").prop("checked")){
+            console.log("yes");
+            $("input[type=checkbox]").each(function () {
+                $(this).prop("checked", true);
+            })
+
+        }else{
+            console.log("no");
+            $("input[type=checkbox]").each(function () {
+                $(this).prop("checked", false);
+            })
+        }
+    }
+
+    function getData(){
+        send_data = {};
+        $("input[name='selected_item']").each(function () {
+
+
+            if($(this).prop("checked")){
+                var branch = $(this).parent().parent().find("[name=branch]").find("select").val();
+                var git_repo = $(this).parent().parent().find("[name=http_repo]").text();
+                var flag = $(this).parent().parent().find("#samtest").length;
+                if(flag){
+                    var man_xml = $(this).parent().parent().find("#samtest").val();
+                    branch = branch+":"+man_xml;
+                }
+
+                console.log(branch);
+                console.log(git_repo);
+                send_data[git_repo] = branch;
+            }
+        });
+
+        $.ajax({
+            url: "{% url 'save_repo' %}",
+            type: "post",
+            data: send_data,
+            dataType: 'JSON',
+            headers: {'X-CSRFToken': $.cookie('csrftoken'),
+                        'group': $("#repo_nav li[class=active]").text(),
+                        'buildid': {{ build_id }},
+            },
+            success: function (res_data) {
+
+                if(res_data.status){
+                    alert("保存成功");
+                }else{
+                    alert("保存失败");
+                }
+
+            },
+            error: function () {
+                alert("保存失败");
+            }
+        })
+    }
+
+
+
+</script>
+
+
+{% endblock %}

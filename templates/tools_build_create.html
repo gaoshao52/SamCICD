@@ -1,0 +1,61 @@
+{% extends "tools.html" %}
+
+{% block create_tools %}
+    {#{{ buildtool_form }}#}
+    <div class="row">
+        <div class="col-md-8 col-lg-7">
+            <div class="alert alert-info" role="alert"><strong>Build项目：</strong><br>......
+            {{ buildtool_form.errors }}
+            </div>
+        </div>
+    </div>
+
+    <form method="post">{% csrf_token %}
+        <div class="row">
+            <div class="form-group col-md-8 col-lg-7">
+                <label for="id_name">{{ buildtool_form.name.label }}</label>
+                {{ buildtool_form.name }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-4 col-lg-2">
+                <label for="id_codeserver_id">{{ buildtool_form.codeserver_id.label }}</label>
+                {{ buildtool_form.codeserver_id }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-md-8 col-lg-7">
+                <label for="id_shell_code">{{ buildtool_form.shell_code.label }}</label>
+                {{ buildtool_form.shell_code }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-8 col-lg-7">
+                <label for="id_email">{{ buildtool_form.email.label }}</label>
+                {{ buildtool_form.email }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-form-group col-md-8 col-lg-7">
+
+                <button type="submit" class="btn btn-success pull-right">保存</button>
+
+            </div>
+        </div>
+    </form>
+
+    {% if info.info %}
+        <div class="row" style="margin-top: 10px">
+        <div class="col-md-8 col-lg-7">
+            <div class="alert alert-warning" role="alert">
+                {{ info.info }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'tools.html' %}
+
+{% block create_tools %}
+
+    <div class="row">
+        <div class="col-md-10 col-lg-8">
+            <div class="alert alert-info" role="alert"><strong>GitLab服务器：</strong><br>通过标题，根URL和个人访问令牌集成gitlab服务器</div>
+        </div>
+    </div>
+    {{ obj.errors }}
+    <form method="post">{% csrf_token %}
+        <div class="row">
+            <div class="form-group col-md-10 col-lg-8">
+                <label for="person_title">{{ obj.title.label }}</label>
+                {{ obj.title }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-md-10 col-lg-8">
+                <label for="gitlab_url">{{ obj.url.label }}</label>
+                {{ obj.url }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-md-10 col-lg-8">
+                <label for="person_token">{{ obj.person_token.label }}</label>
+                {{ obj.person_token }}
+            </div>
+
+            <div class="col-sm-2">
+                {{ obj.myuser_id }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">连接</button>
+    <span style="color: {{ info.color }};display: inline-block; margin-left: 62px;">{{ info.msg }}</span>
+    </form>
+
+{% endblock %}

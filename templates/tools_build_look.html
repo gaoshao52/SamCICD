@@ -1,0 +1,53 @@
+{% extends "index.html" %}
+{% load tags %}
+
+{% block index %}
+
+    <div class="row">
+        <div class="col-lg-8 col-md-10">
+
+            <div class="panel panel-info">
+                <!-- Default panel contents -->
+                <div class="panel-heading">构建历史</div>
+
+                <!-- Table -->
+                <table class="table table-hover">
+                    <tr>
+                        <th>任务ID</th>
+                        <th>进度条</th>
+                        <th>状态</th>
+                    </tr>
+
+
+
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-8 col-md-10">
+
+            <div class="panel panel-info">
+                <!-- Default panel contents -->
+                <div class="panel-heading">已选项目及分支</div>
+
+                <!-- Table -->
+                <table class="table table-hover">
+                    <tr>
+                        <th>序号</th>
+                        <th>项目</th>
+                        <th>分支</th>
+                    </tr>
+
+
+                    {% display_code_project_in_look_table build_branch_objs %}
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}

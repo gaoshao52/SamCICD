@@ -1,0 +1,60 @@
+{% extends "base_index.html" %}
+{% load tags %}
+{% block extra-css %}
+
+
+{% endblock %}
+
+{% block container %}
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                <li {% block index_list %}{% endblock %}><a href="{% url 'cicd_index' %}">主页</a></li>
+                <li {% block tool_list %}class="active"{% endblock %}><a href="{% url 'cicd_tools' %}">工具列表</a></li>
+                <li><a href="">任务列表</a></li>
+            </ul>
+
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            {% block create_tools %}
+            <div class="row">
+
+                <div class="col-sm-6 col-md-4 col-lg-3 ">
+                    <div class="thumbnail" style="height: 300px; width: 260px">
+                        <a href="{% url 'cicd_tools_create' %}">
+                            <img class="lazy" src="/static/img/gitlab.jpg" width="300" height="150" >
+                        </a>
+                        <div class="caption" style="margin-top: 20px;">
+                            <h3>
+
+                                <a href="{% url 'cicd_tools_create' %}">添加工具</a>
+                            </h3>
+                            <p style="color: #8c8c8c">集成您自己存储和管理代码的gitlab服务器</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-sm-6 col-md-4 col-lg-3 ">
+                    <div class="thumbnail" style="height: 300px; width: 260px">
+                        <a href="{% url 'cicd_tools_build_create' %}">
+                            <img class="lazy" src="/static/img/build.png" width="300" height="150" >
+                        </a>
+                        <div class="caption" style="margin-top: 20px;">
+                            <h3>
+                                <a href="{% url 'cicd_tools_build_create' %}">添加工具</a>
+                            </h3>
+                            <p style="color: #8c8c8c">创建编译代码的项目</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% endblock %}
+
+
+        </div>
+    </div>
+
+
+{% endblock %}
