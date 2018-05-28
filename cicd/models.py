@@ -104,13 +104,14 @@ class BuildTools(models.Model):
     '''代码编译'''
     name = models.CharField(max_length=32, unique=True, verbose_name="工程名称")
     shell_code = models.TextField(blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
+    # email = models.EmailField(blank=True, null=True)
+    artifact = models.CharField(max_length=64, blank=True, null=True)
     codeserver = models.ForeignKey("CodeServer", on_delete=models.CASCADE)
     myuser = models.ForeignKey("MyUser", on_delete=models.CASCADE)
 
 
 class BuildProjectAndBranch(models.Model):
-    git_repo = models.URLField(unique=True)
+    git_repo = models.URLField()
     branch = models.CharField(max_length=32)
     group = models.CharField(max_length=32)
     # name = models.CharField(max_length=32, blank=True, null=True)

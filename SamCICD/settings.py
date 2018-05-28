@@ -24,8 +24,9 @@ SECRET_KEY = 'b+g)b*8&gk&&a2&!q42*g^f^t#^9k^ciam7njvexs%$h^r@0j)'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+# DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*",]
 
 
 # Application definition
@@ -128,4 +129,4 @@ AUTH_USER_MODEL = 'cicd.MyUser'
 
 LOGIN_URL = "/account/login/"
 
-MANIFEST_DIR = os.path.join(BASE_DIR, "tmpsam")
+MANIFEST_DIR = os.path.join(BASE_DIR, "cicdtmp")

@@ -7,7 +7,7 @@
             <ul class="nav nav-sidebar">
                 <li class="active"><a href="{% url 'cicd_index' %}">主页</a></li>
                 <li><a href="{% url 'cicd_tools' %}">工具列表</a></li>
-                <li><a href="">任务列表</a></li>
+                <li><a href="{% url 'download' %}">Download</a></li>
 
             </ul>
 
@@ -31,12 +31,11 @@
                         <h3 class="panel-title">Build工程</h3>
                     </div>
                     <div class="panel-body">
-                        <table class="table table-hover">
+                        <table id="build_list" class="table table-hover">
                             {% display_build_in_table build_objs %}
                         </table>
                     </div>
                 </div>
-
 
 
 
@@ -66,79 +65,220 @@
     </div>
 
 
-    {% block bottom-js %}
-        <script>
 
-            function preConfirm(ele){
-                $('#myModal').on('shown.bs.modal', function (e) {
-                    var obj_id = $(ele).attr("obj_id");
 
-                    var title_name = $(ele).parent().parent().find("[target='title']").text();
-                    $("#myModalLabel").text(title_name);
-                    $("#confirm_delete").attr("obj_id", obj_id);
 
-                });
+
+{% endblock %}
+{% block bottom-js %}
+    <script>
+
+        var sec_to_time = function(s) {
+            var t;
+            if(s > -1){
+                var hour = Math.floor(s/3600);
+                var min = Math.floor(s/60) % 60;
+                var sec = s % 60;
+                if(hour < 10) {
+                    t = '0'+ hour + "小时";
+                } else {
+                    t = hour + "小时";
+                }
+                if(min < 10){
+                    t += "0";
+                }
+                t += min + "分";
+                if(sec < 10){
+                    t += "0";
+                }
+                t += sec.toFixed(0);
             }
+            return t+"秒";
+        }
 
 
-            function confirm(){
-                $('#myModal').on('hidden.bs.modal', function (e) {
-                    var obj_id = $("#confirm_delete").attr("obj_id");
+        /**
+         * Git Lab server
+         * */
+
+        function preConfirm(ele){
+            $('#myModal').on('shown.bs.modal', function (e) {
+                var obj_id = $(ele).attr("obj_id");
+
+                var title_name = $(ele).parent().parent().find("[target='title']").text();
+                $("#myModalLabel").text(title_name);
+                $("#confirm_delete").attr("obj_id", obj_id);
+
+            });
+        }
 
 
-                    $.ajax({
-                        url: "{% url 'cicd_tools_delete' %}",
-                        type: "POST",
-                        data: {'obj_id': obj_id},
-                        headers: {'X-CSRFToken': $.cookie("csrftoken")},
-                        dataType: "JSON",
-                        success: function (res_data) {
-                            console.log(res_data);
-
-                            if (res_data.status){
-                                alert("删除数据成功！");
-                                location.reload();
-                            }else{
-                                alert("删除数据失败！");
-                            }
+        function confirm(){
+            $('#myModal').on('hidden.bs.modal', function (e) {
+                var obj_id = $("#confirm_delete").attr("obj_id");
 
 
-                        },
-                        error: function () {
-                            alert("删除数据失败！");
-                        }
-                    })
-
-
-                })
-            }
-
-            function triggerJob(ele) {
-                var build_id = $(ele).parent().parent().attr("build_id");
-                console.log(build_id);
                 $.ajax({
-                    url: "{% url 'trigger_job' %}",
-                    type: "post",
-                    data: {"build_id": build_id},
-                    dataType: 'JSON',
-                    headers: {'X-CSRFToken': $.cookie('csrftoken'),},
+                    url: "{% url 'cicd_tools_delete' %}",
+                    type: "POST",
+                    data: {'obj_id': obj_id},
+                    headers: {'X-CSRFToken': $.cookie("csrftoken")},
+                    dataType: "JSON",
                     success: function (res_data) {
-                        if(res_data.status){
-                            alert("触发任务成功");
+                        console.log(res_data);
+
+                        if (res_data.status){
+                            alert("删除数据成功！");
+                            location.reload();
                         }else{
-                            alert("触发任务失败111");
+                            {#alert("删除数据失败！");#}
                         }
+
+
                     },
                     error: function () {
-                        alert("触发任务失败222");
+                        {#alert("删除数据失败！");#}
                     }
-                });
+                })
+
+
+            })
+        }
+
+        // end
+
+        /**
+         * Build Project
+         * */
+
+        function triggerJob(ele) {
+            var build_id = $(ele).parent().parent().attr("build_id");
+            console.log(build_id);
+            $.ajax({
+                url: "{% url 'trigger_job' %}",
+                type: "post",
+                data: {"build_id": build_id},
+                dataType: 'JSON',
+                headers: {'X-CSRFToken': $.cookie('csrftoken'),},
+                success: function (res_data) {
+                    if(res_data.status){
+                        alert("触发任务成功");
+                    }else{
+                        {#alert("触发任务失败111");#}
+                    }
+                },
+                error: function () {
+                    {#alert("触发任务失败222");#}
+                }
+            });
+        }
+
+        function getPjectName(){
+            var name_list = [];
+            $("#build_list").find("[name='job_name']").each(function () {
+                var job_status = $(this).parent().find("[name='job_status']").text();
+
+                if(job_status == "Running"){
+                    name_list.push($(this).text());
+                }
+
+            });
+
+            return name_list
+        }
+
+        {#console.log(getPjectName());#}
+
+        function updateBuildStatus() {
+            $.ajax({
+                url: "{% url 'update_build_project' %}",
+                type: "GET",
+                dataType: "JSON",
+                success: function (res_data) {
+                    {#console.log(res_data);#}
+                    {#alert("update success"+res_data);#}
+
+                    for(var index in res_data){
+                        {#console.log(index);#}
+                        var new_obj = JSON.parse(res_data[index]);
+
+                        // set last build number
+                        var build_num = new_obj.last_build_number;
+                        var num_obj = $("[build_id='"+index+"']").find("[name='last_number']");
+
+                        if(build_num == -1){
+                            num_obj.text("");
+                        }else{
+                            num_obj.text(build_num);
+                        }
+
+
+                        // set Running or Done
+                        var building_obj = $("[build_id='"+index+"']").find("[name='job_status']");
+                        if(new_obj.building_status == -1){
+                            building_obj.text("");
+                        }
+                        else if(new_obj.building_status){
+                            building_obj.text("Running");
+                        }else{
+                            building_obj.text("Done");
+                        }
+
+                        // set building result
+                        var result_obj = $("[build_id='"+index+"']").find("[name='job_result']");
+
+                        {#console.log(new_obj.build_result);#}
+                        if(new_obj.build_result == -1) {
+                            result_obj.text("");
+                        }else if(new_obj.build_result == "SUCCESS"){
+                            result_obj.text("成功");
+                        }else if(new_obj.build_result == "FAILURE"){
+                            result_obj.text("失败");
+                        }else if(new_obj.build_result == null){
+                            result_obj.text("等待");
+                        }
+                        else{
+                            result_obj.text(new_obj.build_result);
+                        }
+
+
+                        //set time
+                        var time_obj = $("[build_id='"+index+"']").find("[name='job_time']");
+                        time_obj.text(new_obj.job_time);
+
+                        /*
+                        var job_start_timestamp = new_obj.timestamp;
+                        if(new_obj.building_status == true){
+                            var now_timestamp = Date.parse(new Date());
+
+                            time_obj.text(sec_to_time((now_timestamp-job_start_timestamp)/1000));
+
+                        }
+                        **/
+
+
+                    }
+                },
+                error: function () {
+                    {#alert("update error");#}
+                }
+            })
+        }
+        {#updateBuildStatus();#}
+
+        var int=self.setInterval(updateBuildStatus,1000);
+
+        function clear() {
+
+             if(getPjectName().length == 0){
+                window.clearInterval(int);
             }
+        }
 
-        </script>
-
-    {% endblock %}
+        {#setInterval(clear, 2000);#}
 
 
+
+    </script>
 
 {% endblock %}

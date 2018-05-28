@@ -14,7 +14,11 @@ urlpatterns = [
     re_path(r'^build/save_repo/$', views.save_repo, name="save_repo"),
     re_path(r'^build/trigger_job/$', views.trigger_job, name="trigger_job"),
     re_path(r'^build/look-(\d+)/$', views.cicd_tools_build_look, name="cicd_tools_build_look"),
+    re_path(r'^build/update_build_project/$', views.update_build_project, name="update_build_project"),
+    re_path(r'^build/look_history-(\d+)/$', views.look_history, name="look_history"),
+    re_path(r'^download/$', views.download, name="download"),
 ]
+
 
 
 

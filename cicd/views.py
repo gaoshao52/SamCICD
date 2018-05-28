@@ -6,8 +6,10 @@ from cicd import forms
 from cicd import models
 from gitlabAPI.package_api import GitLabAPI
 from django.db.utils import IntegrityError
-import json
+import json, os, time
+import sam_tool
 from JenkinsAPI.ops_api import JenAPI
+from django.utils.safestring import mark_safe
 from django.core.cache import cache
 
 # Create your views here.
@@ -106,7 +108,7 @@ def cicd_tools_build_create(request):
 
             try:
                 objs = models.BuildTools.objects.create(**data)  #  插入数据库
-                JenAPI().create_cicd_job(data.get("name"), data.get('shell_code'))  # jenkins里创建工程
+                JenAPI().create_cicd_job(data.get("name"), data.get('shell_code'), data.get("artifact"))  # jenkins里创建工程
 
                 return redirect(reverse("cicd_index"))
 
@@ -129,6 +131,7 @@ def cicd_tools_build_change(request, build_id):
         buildtool_form = forms.BuildToolForm(request, request.POST)
         if buildtool_form.is_valid():
             data = buildtool_form.cleaned_data
+            print("change--->%s"%data)
 
             if str(buildtool_obj.codeserver_id) != str(data.get("codeserver_id")): # 如果改变gitlab服务器，则删除该工程所有已选的代码工程
                 models.BuildProjectAndBranch.objects.filter(buildtool_id=build_id, myuser_id=request.user.id).delete()
@@ -136,8 +139,8 @@ def cicd_tools_build_change(request, build_id):
             try:
                 models.BuildTools.objects.filter(id=build_id).update(**data)
                 if buildtool_obj.name != data['name']:
-                    JenAPI().server.rename_job(buildtool_obj.name, data['name'])
-                JenAPI().rebuild_cicd_job(data['name'], data["shell_code"])
+                    JenAPI().server.rename_job(buildtool_obj.name, data['name'], data.get("artifact"))
+                JenAPI().rebuild_cicd_job(data['name'], data["shell_code"], data.get("artifact"))
                 return redirect(reverse("cicd_index"))
             except IntegrityError as e:
                 print(e)
@@ -149,7 +152,7 @@ def cicd_tools_build_change(request, build_id):
             "name": buildtool_obj.name,
             "shell_code": buildtool_obj.shell_code,
             "codeserver_id": buildtool_obj.codeserver_id,
-            "email": buildtool_obj.email
+            "artifact": buildtool_obj.artifact
         })
 
     return render(request, "tools_build_change.html", {"buildtool_form": buildtool_form,
@@ -183,7 +186,7 @@ def code_configure(request, build_id):
                                                        "group_objs": group_objs,
                                                        "selected_group": selected_group,
                                                        "base_url": base_url,
-                                                        "person_token": person_token,
+                                                       "person_token": person_token,
                                                        "build_id": build_id,
                                                        })
     else:
@@ -204,7 +207,7 @@ def save_repo(request):
 
     if request.method == "POST":
         # delete data by group
-        models.BuildProjectAndBranch.objects.filter(group=group).delete()
+        models.BuildProjectAndBranch.objects.filter(buildtool_id=int(build_id)).delete()
 
         print(request.POST)
 
@@ -254,7 +257,7 @@ def trigger_job(request):
             clone_url = git_url[0] + "://private_token:"+person_token+"@"+git_url[1]
 
             if obj[1].endswith(".xml"):
-                clone_list.append("~/bin/repo init -u {url} -m {man_xml}".format(url=clone_url, man_xml=obj[1].split(":")[1]))
+                clone_list.append("~/bin/repo init -u {url} -m {man_xml}".format(url=clone_url, man_xml=obj[1].split(":")[1],))
                 clone_list.append("~/bin/repo sync")
             else:
                 clone_list.append("git clone -b {branch} {url}".format(branch=obj[1], url=clone_url))
@@ -263,7 +266,7 @@ def trigger_job(request):
         print("\n".join(clone_list) +"\n"+ buidtool_obj.shell_code)
         new_cmd = "\n".join(clone_list) +"\n"+ buidtool_obj.shell_code
         japi = JenAPI()
-        japi.rebuild_cicd_job(build_name, new_cmd)
+        japi.rebuild_cicd_job(build_name, new_cmd, buidtool_obj.artifact)
         japi.start_cicd_job(build_name)
         info['status'] = True
 
@@ -278,7 +281,75 @@ def cicd_tools_build_look(request, build_id):
     return render(request, "tools_build_look.html", {'build_branch_objs': build_branch_objs})
 
 
+def look_history(request, build_id):
+    buildtool_objs = models.BuildTools.objects.filter(id=build_id, myuser_id=request.user.id).first()
+    jenkin_api = JenAPI()
+    last_build_log = jenkin_api.get_last_build_log(buildtool_objs.name)
 
+    if request.method == "POST":
+
+        return HttpResponse("<br>".join(last_build_log))
+
+    return render(request, "tools_build_look_history.html", {"last_build_log": last_build_log, "build_id": build_id})
+
+# return HttpResponse(last_build_log)
+
+
+
+
+
+
+def update_build_project(request):
+
+    jenkin_api = JenAPI()
+
+    response_data = {}
+    buildtool_objs = models.BuildTools.objects.filter(myuser_id=request.user.id)
+    for obj in buildtool_objs:
+        obj_jenkins_data = jenkin_api.get_last_build_info(obj.name)
+        # obj_jenkins_data["build_id"] = obj.id
+
+        if obj_jenkins_data.get("building_status") == True:
+            job_time = sam_tool.sec_to_time(int(time.time() - int(obj_jenkins_data.get("timestamp") / 1000)))
+        elif obj_jenkins_data.get("building_status") == -1:
+            job_time = ""
+        else:
+            a = obj_jenkins_data.get("duration")
+            b = a / 1000
+
+            job_time = sam_tool.sec_to_time(int(b))
+
+        obj_jenkins_data["job_time"] = job_time
+        response_data[obj.id] = json.dumps(obj_jenkins_data)
+
+
+    return HttpResponse(json.dumps(response_data))
+
+
+
+
+def download(request):
+
+    build_tool_objs = models.BuildTools.objects.filter(myuser_id=request.user.id)
+    for build_obj in build_tool_objs:
+
+        last_number = JenAPI().get_last_build_info(build_obj.name).get("last_build_number")
+        if last_number != -1:
+            package_path = "/data/"+build_obj.name +"/"+ str(last_number)
+            os.system("mkdir -p %s"%package_path)
+
+            src_dir = "/var/lib/jenkins/jobs/{name}/builds/{number}/archive/*".format(name=build_obj.name, number=last_number)
+
+
+            aaa = os.popen("ls %s"%(package_path)).read()
+            if not aaa:
+                os.system("cp -a %s %s"%(src_dir, package_path))
+
+
+
+
+
+    return render(request, "download.html")
 
 
 

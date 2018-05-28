@@ -11,7 +11,7 @@
             <ul class="nav nav-sidebar">
                 <li {% block index_list %}{% endblock %}><a href="{% url 'cicd_index' %}">主页</a></li>
                 <li {% block tool_list %}class="active"{% endblock %}><a href="{% url 'cicd_tools' %}">工具列表</a></li>
-                <li><a href="">任务列表</a></li>
+                <li><a href="{% url 'download' %}">Download</a></li>
             </ul>
 
         </div>

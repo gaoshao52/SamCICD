@@ -1,4 +1,4 @@
-gitlab访问令牌：j57ypsUJHsvuAeFkM7pW
 module：
 1. requests
 2. python-jenkins
+3. git

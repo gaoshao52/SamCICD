@@ -1,0 +1,17 @@
+{% extends "base_index.html" %}
+
+{% block extra-css %}
+
+{% endblock %}
+{% block container %}
+    <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                <li><a href="{% url 'cicd_index' %}">主页</a></li>
+                <li><a href="{% url 'cicd_tools' %}">工具列表</a></li>
+                <li class="active"><a href="{% url 'download' %}">Download</a></li>
+            </ul>
+
+        </div>
+    <iframe class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2" style=" height: 800px; border: 0px" src="http://10.100.203.154/"></iframe>
+
+{% endblock %}

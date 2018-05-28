@@ -6,7 +6,9 @@ from django import template
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 from gitlabAPI.package_api import GitLabAPI
-
+from JenkinsAPI.ops_api import JenAPI
+import sam_tool
+import time
 
 register = template.Library()
 
@@ -42,6 +44,8 @@ def display_gitlab_in_table(objs):
 def display_build_in_table(objs):
     '''生成build连接表格'''
 
+
+
     print("tags build objs--->", objs)
     if objs:
         title_name = objs[0]._meta.get_field('name').verbose_name
@@ -49,19 +53,85 @@ def display_build_in_table(objs):
 
 
         # <button type="button" class="btn btn-info btn-xs">查看</button>
-        table_ele = '''<tr><th>序号</th><th>%s</th><th>%s</th><th style="width:187px;text-align:  center;">ACTION</th>'''%(title_name, git_name)
+        table_ele = '''<tr>
+                            <th>序号</th>
+                            <th>%s</th>
+                            <th>%s</th>
+                            <th style="text-align:  center;">最新Build ID</th>
+                            <th>持续时间</th>
+                            <th>状态</th>
+                            <th>结果</th>
+                            <th style="width:187px;text-align:  center;">ACTION</th>
+                        </tr>'''%(title_name, git_name)
+
+
 
         for index, build_obj in enumerate(objs):
+            # get last build info
+            last_data = JenAPI().get_last_build_info(build_obj.name)
+            if last_data.get("last_build_number") == -1:
+                last_build_number = 0
+            else:
+                last_build_number = last_data.get("last_build_number")
+
+            if last_data.get("building_status") == True:
+                job_status = "Running"
+                job_result = "等待"
+                print("--->:", int(time.time()))
+                print("--->:", int(last_data.get("timestamp")))
+                job_time = sam_tool.sec_to_time(int(time.time()-int(last_data.get("timestamp")/1000)))
+            elif last_data.get("building_status") == -1:
+                job_status = ""
+                job_result = ""
+                job_time = ""
+            else:
+                job_status = "Done"
+                if last_data.get("build_result") == "SUCCESS":
+                    job_result = "成功"
+                elif last_data.get("build_result") == "FAILURE":
+                    job_result = "失败"
+                else:
+                    job_result = last_data.get("build_result")
+
+                a = last_data.get("duration")
+                print(a)
+                b = a/1000
+                print(b)
+                job_time = sam_tool.sec_to_time(int(b))
+
+
+
             # delete_url = reverse("cicd_tools_delete", args=((obj.id,)))
             url_path = reverse("code_configure", args=((build_obj.id,)))
             build_job_change = reverse("cicd_tools_build_change", args=((build_obj.id,)))
             build_job_look = reverse("cicd_tools_build_look", args=((build_obj.id,)))
+            build_job_look_history = reverse("look_history", args=((build_obj.id,)))
 
-            ele = '''<tr build_id="%s"><td>%s</td><td><a href="%s">%s</a></td><td><a href="%s">%s<a></td>
-            <td style="text-align:  center;"><a href="%s" class="btn btn-info btn-xs">查看</a>
+            ele = '''<tr build_id="%s">
+            <td>%s</td>
+            <td name='job_name'><a href="%s">%s</a></td>
+            <td><a href="%s">%s</a></td>
+            <td name='last_number' style="text-align:  center;">%s</td>
+            <td name='job_time'>%s</td>
+            <td name='job_status'>%s</td>
+            <td name='job_result'>%s</td>
+            <td style="text-align:  center;">
+            <a href="%s" class="btn btn-primary btn-xs">code</a>
+            <a href="%s" class="btn btn-info btn-xs">log</a>
             <button type="button" onclick="triggerJob(this);" class="btn btn-success btn-xs">触发</button>
-            <button type="button" class="btn btn-danger btn-xs">删除</button></td>
-            </tr>'''%(build_obj.id, index+1, build_job_change,build_obj.name, url_path,build_obj.codeserver.title, build_job_look)
+            <button type="button" class="btn btn-danger btn-xs">删除</button>
+            </td>
+            </tr>'''%(build_obj.id, index+1,
+                      build_job_change,
+                      build_obj.name,
+                      url_path,build_obj.
+                      codeserver.title,
+                      last_build_number,
+                      job_time,
+                      job_status,
+                      job_result,
+                      build_job_look,
+                      build_job_look_history)
             table_ele += ele
 
         return mark_safe(table_ele)
@@ -96,12 +166,18 @@ def display_repo_in_table(project_objs, base_url, person_token):
             http_url  = item.get('http_url_to_repo')
             git_url = http_url.split("://")
             clone_url = git_url[0] + "://private_token:" + person_token + "@" + git_url[1]
-            import os
-            from SamCICD.settings import MANIFEST_DIR
+            import os, random, time
 
-            os.popen("git clone {url} {dir}".format(url=clone_url, dir=MANIFEST_DIR)).read()
 
-            xml_list = os.listdir(MANIFEST_DIR)
+
+
+            # tmpdata = random.randint(1, 10000)
+            tmpdata = time.time()
+            my_dir = "/tmp/%s"%tmpdata
+
+            os.popen("export GIT_SSL_NO_VERIFY=1; git clone {url} {dir}".format(url=clone_url, dir=my_dir)).read()
+
+            xml_list = os.listdir(my_dir)
             new_xml_list = []
             for aitem in xml_list:
                 if aitem.endswith(".xml"):

@@ -42,10 +42,15 @@ class BuildToolForm(Form):
         widget = widgets.Select(attrs={"class": "form-control"}),
     )
 
-    email = fields.EmailField(
-        label = "邮件通知",
-        widget = widgets.EmailInput(attrs={"class": "form-control"}),
+    # email = fields.EmailField(
+    #     label = "邮件通知",
+    #     widget = widgets.EmailInput(attrs={"class": "form-control"}),
+    # )
+    artifact = fields.CharField(
+        label="存储文件",
+        widget=widgets.TextInput(attrs={"class": "form-control"}),
     )
+
 
     def __init__(self, request, *args, **kwargs):
         super(BuildToolForm, self).__init__(*args, **kwargs)

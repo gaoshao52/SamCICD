@@ -1,0 +1,48 @@
+{% extends "index.html" %}
+{% load tags %}
+
+{% block index %}
+
+    <div id="guozh" class="row" build_id="{{ build_id }}">
+
+
+
+    {% for info in last_build_log %}
+    {{ info }}
+        <br>
+    {% endfor %}
+
+
+    </div>
+
+{% endblock %}
+
+
+
+{% block bottom-js %}
+<script>
+
+
+function updateLog() {
+    var build_id = $('#guozh').attr("build_id");
+    $.ajax({
+        url: "{% url 'look_history' build_id %}",
+        type: "POST",
+        data: null,
+        headers: {'X-CSRFToken': $.cookie("csrftoken")},
+        success: function (res_data) {
+            $('#guozh').empty();
+
+
+            $('#guozh').html(res_data);
+        }
+    })
+}
+
+{#var int=self.setInterval(updateLog,2000);#}
+
+</script>
+
+
+
+{% endblock %}
